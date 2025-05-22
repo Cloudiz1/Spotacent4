@@ -8,10 +8,10 @@ const crypto_1 = __importDefault(require("crypto"));
 // import ytdl from "@distube/ytdl-core"
 // import fs from "fs"
 // ytdl("https://www.youtube.com/watch?v=NY__VTIUsiU").pipe(fs.createWriteStream("video.mp4"));
-const clientSecret = "7e4bc87226c5491abff049e3f0bcb8d5";
-const clientId = "8a36e722ad044b35ae604882bc3f5bcf";
 var app = (0, express_1.default)();
 const port = 6931;
+const clientId = "8a36e722ad044b35ae604882bc3f5bcf";
+const redirectUri = `http://127.0.0.1:${port}/callback`;
 function generateRandomString(length) {
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const values = crypto_1.default.getRandomValues(new Uint8Array(length));
@@ -40,10 +40,48 @@ async function verify() {
     authUrl.searchParams.set("scope", scope);
     authUrl.searchParams.set("code_challenge_method", "S256");
     authUrl.searchParams.set("code_challenge", codeChallenge);
-    authUrl.searchParams.set("redirect_uri", `http://127.0.0.1:${port}/callback`);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
     // authUrl.search = new URLSearchParams(params).toString();
     const open = (await import('open')).default;
     await open(authUrl.toString());
-    console.log("Generated Auth URL:", authUrl.toString());
+    app.get("/callback", async (req, res) => {
+        const code = req.query.code;
+        const url = "https://accounts.spotify.com/api/token";
+        if (typeof code === "string" && code != undefined) {
+            const tokenRes = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    client_id: clientId,
+                    grant_type: "authorization_code",
+                    code: code,
+                    redirect_uri: redirectUri,
+                    code_verifier: codeVerifier,
+                }),
+            });
+            const tokenJson = await tokenRes.json();
+            const accessToken = tokenJson.access_token;
+            if (!accessToken) {
+                res.send("Failed to authenticate");
+                return;
+            }
+            // const playlistsRes = await fetch("https://api.spotify.com/v1/me/playlists", {
+            //     headers: { Authorization: `Bearer ${accessToken}` },
+            // });
+            // const playlists = await playlistsRes.json();
+            res.send("Authentication complete. You can close this tab.");
+            server.close();
+            return accessToken;
+        }
+    });
+    const server = app.listen(port, () => {
+        console.log("waiting for spotify redirect");
+    });
 }
-verify();
+function getPlaylists() {
+    verify()
+        .then((accessToken) => {
+        console.log(accessToken);
+    });
+}
+getPlaylists();
