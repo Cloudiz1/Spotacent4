@@ -1,10 +1,12 @@
 {
   "scripts": {
-    "dev": "npx tsc && node build/main.js"
+    "car": "npx tsc && node build/main.js",
+    "run": "node build/main.js"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.10",
     "@types/node": "^22.15.21",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "open": "^10.1.2"
   },

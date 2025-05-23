@@ -1,5 +1,9 @@
 import express from "express";
 import crypto from "crypto";
+import fs from "node:fs";
+
+import * as dotenv from 'dotenv';
+dotenv.config();
 // import ytdl from "@distube/ytdl-core"
 // import fs from "fs"
 
@@ -8,7 +12,11 @@ import crypto from "crypto";
 var app = express();
 const port = 6931;
 
-const clientId: string = "";
+if (!process.env.CLIENT_ID) {
+    throw Error("CLIENT_ID is not defined in .env");
+}
+
+const clientId: string = process.env.CLIENT_ID;
 const redirectUri: string = `http://127.0.0.1:${port}/callback`;
 
 function generateRandomString(length: number): string {
@@ -36,7 +44,7 @@ async function verify() {
     const codeChallenge = base64encode(hashed);
     // console.log(codeChallenger);
 
-    const scope = "playlist-read-private";
+    const scope = "playlist-read-private playlist-read-collaborative";
     const authUrl = new URL("https://accounts.spotify.com/authorize");
 
     authUrl.searchParams.set("response_type", "code");
@@ -50,54 +58,96 @@ async function verify() {
     const open = (await import('open')).default;
     await open(authUrl.toString());
 
-    app.get("/callback", async (req, res) => {
-        const code = req.query.code;
-        const url = "https://accounts.spotify.com/api/token";
-
-        if (typeof code === "string" && code != undefined) {
-            const tokenRes = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                    client_id: clientId,
-                    grant_type: "authorization_code",
-                    code: code,
-                    redirect_uri: redirectUri,
-                    code_verifier: codeVerifier,
-                }),
-            });
-
-            const tokenJson = await tokenRes.json();
-            const accessToken = tokenJson.access_token;
-
-            if (!accessToken) {
-                res.send("Failed to authenticate");
-                return;
+    return new Promise((resolve, reject) => {
+        const server = app.listen(port, () => {
+            console.log(`Please authorize in your web browser. If the auth page does not appear, navigate here: ${authUrl.toString()}`);
+        })
+    
+        app.get("/callback", async (req, res) => {
+            const code = req.query.code;
+            const url = "https://accounts.spotify.com/api/token";
+    
+            if (typeof code === "string" && code != undefined) {
+                const tokenRes = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        client_id: clientId,
+                        grant_type: "authorization_code",
+                        code: code,
+                        redirect_uri: redirectUri,
+                        code_verifier: codeVerifier,
+                    }),
+                });
+    
+                const tokenJson = await tokenRes.json();
+                const accessToken = tokenJson.access_token;
+    
+                if (!accessToken) {
+                    res.send("Failed to authenticate");
+                    return;
+                }
+    
+                res.send("Authentication complete. You can close this tab.");
+                server.close();
+    
+                resolve(accessToken);
+            } else {
+                reject(new Error("Could not find code."));
+                res.send("Could not find code.");
+                server.close();
             }
-
-            // const playlistsRes = await fetch("https://api.spotify.com/v1/me/playlists", {
-            //     headers: { Authorization: `Bearer ${accessToken}` },
-            // });
-            // const playlists = await playlistsRes.json();
-
-            res.send("Authentication complete. You can close this tab.");
-            server.close();
-
-            return accessToken;
-        }
-    });
-
-    const server = app.listen(port, () => {
-        console.log("waiting for spotify redirect");
+        });
     })
 }
 
-function getPlaylists() {
-    verify()
-        .then((accessToken) => {
-            console.log(accessToken);
-        });
+interface Playlist {
+    name: string,
+    tracks: Array<Track>
 }
 
-getPlaylists();
+interface Track {
+    name: string,
+    artists: Array<string>,
+    duration: number,
+}
 
+async function getPlaylists() {
+    const playlistArray = [];
+    const accessToken = await verify();
+    const playlistRes = await fetch("https://api.spotify.com/v1/me/playlists", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    const playlists = await playlistRes.json();
+    for (const playlist of playlists.items) {
+        let playlistObj: Playlist = {name: playlist.name, tracks: []}
+
+        const tracksRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        const tracks = await tracksRes.json();
+
+        for (let track of tracks.items) {
+            let artists = [];
+            
+            for (const artist of track.track.artists) {
+                artists.push(artist.name);
+            }
+
+            playlistObj.tracks.push({name: track.track.name, artists: artists, duration: track.track.duration_ms});
+        }
+
+        playlistArray.push(playlistObj);
+    }
+
+    return playlistArray;
+}
+
+export async function updatePlaylists() {
+    const playlists = await getPlaylists();
+    fs.writeFileSync("./data/playlists.json", JSON.stringify({playlists}, null, "\t"));
+}
+
+updatePlaylists();
