@@ -2,9 +2,8 @@ import ytdl from "@distube/ytdl-core"
 import yts from "yt-search"
 import fs from "fs"
 
-import { PLAYLIST_PATH, INSTALLED_SONGS_PATH, Playlist } from "./types";
+import { PLAYLIST_PATH, INSTALLED_SONGS_PATH, SONGS_DIR, Playlist } from "./types";
 
-// ytdl("https://www.youtube.com/watch?v=NY__VTIUsiU").pipe(fs.createWriteStream("video.mp4"));
 
 function getPlaylists(): Playlist[] {
     const playlistsStr = fs.readFileSync(PLAYLIST_PATH, "utf-8");
@@ -13,21 +12,24 @@ function getPlaylists(): Playlist[] {
 }
 
 async function installSongs() {
+    const fileExtension = ".wav";
     const playlists: Playlist[] = getPlaylists();
 
-    let currentlyInstalledTracks = new Set();
-    if (fs.existsSync(INSTALLED_SONGS_PATH)) {
-        const data = fs.readFileSync(INSTALLED_SONGS_PATH, 'utf-8');
-        currentlyInstalledTracks = new Set(data.split('\n'));
-    }
+    const tracks = fs.readdirSync(SONGS_DIR);
+    let InstalledTracks = new Set(tracks);
 
-    let newTrackNamesSet: Set<string> = new Set(); 
+    // if (fs.existsSync(INSTALLED_SONGS_PATH)) {
+    //     const data = fs.readFileSync(INSTALLED_SONGS_PATH, 'utf-8');
+    //     currentlyInstalledTracks = new Set(data.split('\n'));
+    // }
+
+    // let newTrackNamesSet: Set<string> = new Set();
     for (const playlist of playlists) {
         for (const track of playlist.tracks) {
             const trackName = track.name + " by " + track.artists.join(" and ");
             const ytQuery = track.name + track.artists[0];
 
-            if (!currentlyInstalledTracks.has(trackName)) {
+            if (!InstalledTracks.has(trackName + fileExtension)) {
                 const res = await yts(ytQuery);
                 const videos = res.videos.slice(0, 3);
 
@@ -39,19 +41,28 @@ async function installSongs() {
                         mostViewedCount = v.views;
                         mostViewed = v;
                     }
-                    
+
                     // console.log( `${ v.views } | ${ v.title } (${ v.timestamp }) | ${ v.author.name }` );
                 })
 
-                console.log(mostViewed);
+                const fileStream = fs.createWriteStream(SONGS_DIR + trackName + fileExtension);
+                const video = ytdl(mostViewed.url, {filter: "audioonly"});
+                video.pipe(fileStream); 
+
+                fileStream.on("finish", () => {
+                    InstalledTracks.add(trackName);
+                    console.log("finished downloading: " + trackName);
+                })
+            }
+            else {
+                console.log("a");
             }
 
 
-            newTrackNamesSet.add(trackName);
         }
     }
 
-    fs.writeFileSync(INSTALLED_SONGS_PATH, [...newTrackNamesSet].join('\n'));
+    // fs.writeFileSync(INSTALLED_SONGS_PATH, [...newTrackNamesSet].join('\n'));
 }
 
 export function test() {
