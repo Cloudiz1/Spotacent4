@@ -1,5 +1,5 @@
 import { inputCommand } from "../types/index"
 
-export function play(command: inputCommand) {
+export function sync(command: inputCommand) {
 
 }

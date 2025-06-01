@@ -8,6 +8,10 @@
             ]
         },
         {
+            "name": "sync",
+            "description": "grabs playlists and songs from Spotify"
+        },
+        {
             "name": "play",
             "description": "plays a song or playlist",
             "syntax": [
@@ -39,6 +43,10 @@
             "syntax": [
                 "set <settingName> <value>"
             ]
+        },
+        {
+            "name": "clear",
+            "description": "clears console"
         },
         {
             "name": "exit",

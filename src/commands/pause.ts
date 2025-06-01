@@ -1,5 +1,5 @@
-import { InputCommand } from "../types/index"
+import { inputCommand } from "../types/index"
 
-export function pause(command: InputCommand) {
+export function pause(command: inputCommand) {
 
 }

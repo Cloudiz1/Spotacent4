@@ -1,6 +1,4 @@
-import { InputCommand } from "../types/index"
-
-export function exit(command: InputCommand) {
+export function exit() {
     // maybe other closing stuff
     process.exit();
 }

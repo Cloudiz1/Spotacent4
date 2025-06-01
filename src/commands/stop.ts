@@ -1,5 +1,5 @@
-import { InputCommand } from "../types/index"
+import { inputCommand } from "../types/index"
 
-export function stop(command: InputCommand) {
+export function stop(command: inputCommand) {
 
 }

@@ -1,5 +1,5 @@
-import { InputCommand } from "../types/index"
+import { inputCommand } from "../types/index"
 
-export function resume(command: InputCommand) {
+export function resume(command: inputCommand) {
 
 }

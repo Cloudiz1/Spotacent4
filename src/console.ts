@@ -1,6 +1,4 @@
-import { InputCommand, COMMANDS_DATA_PATH, DEFINED_COMMANDS, CommandDescription } from "./types";
-import fs from "node:fs";
-
+import { inputCommand, DEFINED_COMMANDS} from "./types";
 import * as commands from "./commands/index"
 
 const readline = require('readline').createInterface({
@@ -9,10 +7,8 @@ const readline = require('readline').createInterface({
 });
 
 export class Console {
-    // private definedCommands: Array<DefinedCommand>;
-    // private definedCommandNames: Set<string>;
-
     constructor() {
+        console.log('Run "sync" to get started or "help" for a list of commands');
         this.getInput();
     }
 
@@ -29,36 +25,73 @@ export class Console {
         
         if (!name) return; // empty
 
-        let command: InputCommand = {name: name, args: commandInput};
+        let command: inputCommand = {name: name, args: commandInput};
 
         if (!this.doesCommandExist(command)) {
-            console.log("Command not found");
+            console.log("Could not find command: " + command.name);
             return;
         }
 
         this.run(command);
     }
 
-    doesCommandExist(command: InputCommand): boolean {
-        const expectedCommand = DEFINED_COMMANDS.find(
-            (definedCommand: CommandDescription) => definedCommand.name === command.name
-        );
-
+    doesCommandExist(command: inputCommand): boolean {
+        const expectedCommand = DEFINED_COMMANDS.get(command.name);
         if (expectedCommand === undefined) return false;
 
         return true;
     }
 
-    run(command: InputCommand) {
+    run(command: inputCommand) {
         switch(command.name) {
-            case "exit": commands.exit(command); // allegedly done
-            case "get": commands.get(command);
-            case "help": commands.help(command);
-            case "pause": commands.pause(command);
-            case "play": commands.play(command);
-            case "resume": commands.resume(command);
-            case "set": commands.set(command);
-            case "stop": commands.stop(command);
+            case "clear": { // done
+                commands.clear();
+                break;
+            }
+
+            case "exit": { // done
+                commands.exit();
+                break;
+            }
+
+            case "get": {
+                commands.get(command);
+                break;
+            }
+            
+            case "help": { // done
+                commands.help(command);
+                break;
+            }
+
+            case "pause": {
+                commands.pause(command);
+                break;
+            }
+            case "play": {
+                commands.play(command);
+                break;
+            }
+
+            case "resume": {
+                commands.resume(command);
+                break;
+            }
+
+            case "set": {
+                commands.set(command);
+                break;
+            }
+
+            case "stop": {
+                commands.stop(command);
+                break;
+            }
+
+            case "sync": {
+                commands.sync(command);
+                break;
+            }
         }
     }
 }

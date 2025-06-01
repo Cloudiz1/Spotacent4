@@ -1,5 +1,5 @@
-import { InputCommand } from "../types/index"
+import { inputCommand } from "../types/index"
 
-export function set(command: InputCommand) {
+export function set(command: inputCommand) {
 
 }
