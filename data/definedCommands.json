@@ -1,0 +1,48 @@
+{
+    "commands": [
+        {
+            "name": "help",
+            "description": "helps...",
+            "syntax": [
+                "help", "help <commandName>", "help settings"
+            ]
+        },
+        {
+            "name": "play",
+            "description": "plays a song or playlist",
+            "syntax": [
+                "play <songName> | <songId>", "play <playlistName> | <playlistId>" 
+            ]
+        },
+        {
+            "name": "pause",
+            "description": "pause playing audio"
+        },
+        {
+            "name": "resume",
+            "description": "resumes playing audio"
+        },
+        {
+            "name": "stop",
+            "description": "stops playing audio"
+        },
+        {
+            "name": "get",
+            "description": "lists information",
+            "syntax": [
+                "get songs", "get playlists", "get songs <playlistName> | <playlistId>", "get settings", "get <settingName>"
+            ]
+        },
+        {
+            "name": "set",
+            "description": "changes the value of a setting",
+            "syntax": [
+                "set <settingName> <value>"
+            ]
+        },
+        {
+            "name": "exit",
+            "description": "exits the program"
+        }
+    ]
+}
