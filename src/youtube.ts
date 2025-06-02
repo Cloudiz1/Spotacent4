@@ -2,6 +2,8 @@ import ytdl from "@distube/ytdl-core"
 import yts from "yt-search"
 import fs from "fs"
 
+import { clear } from "./commands/index"
+
 import { PLAYLIST_PATH, SONGS_DIR, Playlist, Track} from "./types";
 
 
@@ -21,7 +23,9 @@ function trackToPathName(track: Track): string {
     return trackName;
 }
 
-async function installSongs() {
+// TODO: lowkey needs more error handling, but it does work
+// TODO: lowkey this function is going to make me go fucking insane
+export async function installSongs() {
     const fileExtension = ".wav";
     const playlists: Playlist[] = getPlaylists();
 
@@ -31,10 +35,25 @@ async function installSongs() {
     for (const playlist of playlists) {
         for (const track of playlist.tracks) {
             const trackName = trackToPathName(track);
-            const ytQuery = track.name + track.artists[0];
+            const ytQuery = track.name + " " + track.artists[0];
 
-            if (!InstalledTracks.has(trackName + fileExtension)) {
-                const res = await yts(ytQuery);
+            if (!InstalledTracks.has(trackName + fileExtension) && !InstalledTracks.has(trackName + ".tmp")) { // handle incorrectly installed songs at the end, the extra case is to not download the same song twice because they are queried before it has a chance to become a .wav
+                let res;
+                try {
+                    // stops rate limiting LOL
+                    const sleep = (waitTimeInMs: number) => new Promise(resolve => setTimeout(resolve, waitTimeInMs));
+                    await sleep(2000);
+                    res = await yts(ytQuery);
+                } catch (err) {
+                    console.log(err);
+                    return;
+                }
+                
+                if (res === undefined) {
+                    console.log("a");
+                    continue;
+                }
+
                 const videos = res.videos.slice(0, 3);
 
                 let mostViewed = videos[0];
@@ -61,8 +80,4 @@ async function installSongs() {
             }
         }
     }
-}
-
-export function test() {
-    installSongs();
 }

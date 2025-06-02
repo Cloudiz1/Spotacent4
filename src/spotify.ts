@@ -91,8 +91,8 @@ async function verify() {
     
                 resolve(accessToken);
             } else {
-                reject(new Error("Could not find code."));
-                res.send("Could not find code.");
+                reject("Could not find code.");
+                res.send("Authorization failed.");
                 server.close();
             }
         });

@@ -1,3 +1,5 @@
+// okay its not really a terminal but console is already a namespace cause js is really fucking lame
+
 import { inputCommand, DEFINED_COMMANDS} from "./types";
 import * as commands from "./commands/index"
 
@@ -6,8 +8,12 @@ const readline = require('readline').createInterface({
   output: process.stdout
 });
 
-export class Console {
+export class Terminal {
+    runningAsync: boolean;
+
     constructor() {
+        this.runningAsync = false;
+
         console.log('Run "sync" to get started or "help" for a list of commands');
         this.getInput();
     }
@@ -15,7 +21,10 @@ export class Console {
     getInput() {
         readline.question("> ", (res: string) => {
             this.processInput(res);
-            this.getInput();
+
+            if (!this.runningAsync) {
+                this.getInput();
+            }
         });
     }
 
@@ -89,7 +98,8 @@ export class Console {
             }
 
             case "sync": {
-                commands.sync(command);
+                commands.sync();
+                this.runningAsync = true;
                 break;
             }
         }

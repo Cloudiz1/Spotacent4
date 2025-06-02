@@ -1,5 +1,11 @@
-import { inputCommand } from "../types/index"
+import * as youtube from "../youtube"
+import * as spotify from "../spotify"
 
-export function sync(command: inputCommand) {
+import { programConsole } from "../main";
 
+export async function sync() {    
+    await spotify.updatePlaylists();
+    await youtube.installSongs();
+
+    programConsole.getInput();
 }
